@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
+#include <string.h>
 #include <sys/select.h>
 #include <unistd.h>
 #include <errno.h>
@@ -48,6 +49,7 @@ int main(int ac, char** av) {
     int client_socket;
     int cmd_socket[MAX_CLIENTS];
     fd_set readfds;
+    fd_set writefds;
     int max_sd;
 
     {
@@ -158,11 +160,12 @@ int main(int ac, char** av) {
             if (sd > max_sd)
                 max_sd = sd;
         }
+        memcpy(&writefds,&readfds, sizeof(readfds));
 
         tv.tv_sec = 300;
         tv.tv_usec = 0;
 
-        activity = select(max_sd + 1, &readfds, NULL, NULL, &tv);
+        activity = select(max_sd + 1, &readfds, &writefds, NULL, &tv);
         if (activity == 0) {
             syslog(LOG_DEBUG, "select timeout");
             continue;
@@ -170,6 +173,14 @@ int main(int ac, char** av) {
         if ((activity < 0) && (errno != EINTR)) {
             char *emsg = strerror(errno);
             syslog(LOG_ERR, "select error: %s", emsg);
+        }
+        
+        for ( i=0; i<max_sd; i++ ) {
+            if ( FD_ISSET(i,&writefds) ) {
+                if ( verbose > 8 )
+                    printf("writefd # %d set by select\n", i);
+                continue;
+            }
         }
 
         /**********************************************
