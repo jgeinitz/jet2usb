@@ -57,13 +57,21 @@ int parsearguments(int ac, char **av,
         char *p, int p_max_len
     ) {
     
+    void usage(char *name) {
+        printf("usage: %s [-j port] [-c port] [-p device] [-v] [-T]\n"
+                "\t--jetport port\t-j port  \tlisten port for data\n"
+                "\t--printer name\t-p device\tsend data to this device\n"
+                "\t--cmdport port\t-c port  \tspecial command interface\n"
+                "\t--verbose     \t-v       \tincrease verbosity\n"
+                "\t--testmode    \t-T       \tinternal test mode\n",
+                name
+                );
+    }
+    
     while (1) {
         int this_option_optind = optind ? optind : 1;
         int option_index = 0;
         int c;
-        
-        *jetport = 9100;
-        *cmdport = 9191;
         
         static struct option long_options[] = {
             {"jetport", required_argument, 0, 'j'},
@@ -101,6 +109,7 @@ int parsearguments(int ac, char **av,
                 *verbose +=9;
                 break;
             case '?':
+                usage(av[0]);
                 return 1;;
             default:
                 printf("%s: -%c not yet implemented\n", av[0], c);

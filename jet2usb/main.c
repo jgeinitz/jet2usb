@@ -2,6 +2,8 @@
  * File:   main.c
  * Author: Juergen Geinitz
  *
+ * License: GPL
+ * 
  * Started on 25. August 2018, 07:15
  */
 
@@ -35,8 +37,8 @@ int main(int ac, char** av) {
     int                 verbose         = 0;
     int                 TestMode        = 0;
     int                 terminating     = 0;
-    int                 jetport;
-    int                 cmdport;
+    int                 jetport         = 9100;
+    int                 cmdport         = 9191;
     struct sockaddr_in6 dataAddress;
     struct sockaddr_in  cmdAddress;
     struct timeval      tv;
