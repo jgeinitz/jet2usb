@@ -1,5 +1,3 @@
-/*
- * */
 
 #include <stdio.h>
 #include <string.h>
@@ -15,7 +13,6 @@
 
 #define TRUE 1
 
-
 static int typeval;
 #define PS 1
 #define PCL 0
@@ -30,6 +27,7 @@ void Write(int f, char* b, int l ) {
 void resetGuesser() {
     typeval = UNSPEC;
 }
+
 void guessJob(char *buf, int max) {
     int i;
     
@@ -48,6 +46,7 @@ int isPS() {
         return 1;
     return 0;
 }
+
 
 int parsearguments(int ac, char **av,
         int *verbose,
@@ -91,7 +90,6 @@ int parsearguments(int ac, char **av,
                 printf("\n");
                 break;
             case 'v':
-                printf("%s: verbose mode\n", av[0]);
                 *verbose += 1;
                 break;
             case 'p':
@@ -152,7 +150,7 @@ int init_data_listener(int *fds, int port, struct sockaddr_in6 *dataAddress ) {
     dataAddress->sin6_family = AF_INET6;
     dataAddress->sin6_addr   = in6addr_any;
     dataAddress->sin6_port   = htons(port);
-    if (bind(*fds, (struct sockaddr *) dataAddress, sizeof(*dataAddress) ) < 0) {
+    if (bind(*fds,(struct sockaddr *) dataAddress, sizeof(*dataAddress) ) < 0) {
         char *emsg = strerror(errno);
         syslog(LOG_ERR, "data side - cannot bind: %s", emsg);
         return 1;
@@ -234,16 +232,21 @@ int talkTo(int sd, int *term, int verbose) {
     return 0;
 }
 
+#define RBUFS 327681
 int copyTo(int from, int to, int verbose, int testmode) {
     int bytes;
-    char buffer[255];
-    if ( (bytes=read(from,buffer,255)) < 0 ) {
+    char buffer[RBUFS];
+    if ( (bytes=read(from,buffer,RBUFS-1)) < 0 ) {
         if ( verbose ) {
             syslog(LOG_INFO,"read error on socket");
         }
         return 1;
     }
     if ( bytes > 0 ) {
+        if ( verbose ) {
+            syslog(LOG_INFO,"rcv'd %d bytes from socket %d will send to %d",
+                    bytes, from, to);
+        }
         guessJob(buffer,255);
         if ( testmode ) {
             int i;
@@ -262,6 +265,8 @@ int copyTo(int from, int to, int verbose, int testmode) {
         }
         return 0;
     } else { // bytes MUST be 0
+        if ( verbose )
+            syslog(LOG_INFO,"received 0 bytes assume EOF");
         if ( testmode ) {
             if ( isPS() ) {
                 printf("sending additional ^D\n");
@@ -270,8 +275,10 @@ int copyTo(int from, int to, int verbose, int testmode) {
         } else {
             if ( isPS() ) {
                 char b = (char )4;
+                syslog(LOG_INFO,"send EOF char because of PS");
                 Write(to,&b,1);
             }
+            syslog(LOG_INFO,"sent PJL reset");
             strcpy(buffer,"\e%-12345X");
             Write(to,buffer,strlen(buffer));
         }
@@ -279,8 +286,7 @@ int copyTo(int from, int to, int verbose, int testmode) {
     }
 }
 
-
-
+#if 0
 int demomain() {
     /* Variable and structure definitions. */
     int sd, sd2, rc, length = sizeof (int);
@@ -467,4 +473,5 @@ int demomain() {
     exit(0);
     return 0;
 }
+#endif
 

@@ -29,26 +29,26 @@ int main(int ac, char** av) {
 #define P_MAX_LEN 64
     me = av[0];
 
-    int                 i;
-    char                printer[P_MAX_LEN];
-    int                 data_master_fd  = 0;
-    int                 cmd_master_fd   = 0;
-    int                 print_fd        = 0;
-    int                 print_answer_send_to = -1;
-    int                 verbose         = 0;
-    int                 TestMode        = 0;
-    int                 terminating     = 0;
-    int                 jetport         = 9100;
-    int                 cmdport         = 9191;
+    int i;
+    char printer[P_MAX_LEN];
+    int data_master_fd = 0;
+    int cmd_master_fd = 0;
+    int print_fd = 0;
+    int print_answer_send_to = -1;
+    int verbose = 0;
+    int TestMode = 0;
+    int terminating = 0;
+    int jetport = 9100;
+    int cmdport = 9191;
     struct sockaddr_in6 dataAddress;
-    struct sockaddr_in  cmdAddress;
-    struct timeval      tv;
+    struct sockaddr_in cmdAddress;
+    struct timeval tv;
 #define MAX_CLIENTS 10
-    int                 max_clients     = MAX_CLIENTS;
-    int                 client_socket;
-    int                 cmd_socket[MAX_CLIENTS];
-    fd_set              readfds;
-    int                 max_sd;
+    int max_clients = MAX_CLIENTS;
+    int client_socket;
+    int cmd_socket[MAX_CLIENTS];
+    fd_set readfds;
+    int max_sd;
 
     {
         int flag = (LOG_CONS | LOG_PID);
@@ -56,6 +56,7 @@ int main(int ac, char** av) {
             flag |= LOG_PERROR;
         openlog(NULL, flag, LOG_LPR);
     }
+    
     syslog(LOG_INFO, "starting");
     strncpy(printer, "/dev/usb/lp0", P_MAX_LEN);
 
@@ -65,22 +66,25 @@ int main(int ac, char** av) {
             &jetport, &cmdport,
             &TestMode,
             printer, P_MAX_LEN)) {
-        
+
         fprintf(stderr, "%s: terminating on argument errors.\n", me);
         syslog(LOG_ERR, "terminating on argument errors.");
         exit(1);
     }
 
-    if (TestMode) {
+    if (TestMode)
+    {
         printf("Testmode: I won't use a real printer\n");
     }
-    
-    if ( verbose ) {
+
+    if (verbose)
+    {
         syslog(LOG_INFO, "verbosity level set to %d", verbose);
-        if ( verbose > 8 ) printf("verbosity is %d\n", verbose);
+        if (verbose > 8) printf("verbosity is %d\n", verbose);
     }
 
-    if (verbose > 0) {
+    if (verbose > 0)
+    {
         syslog(LOG_INFO, "jetdirect port is %d", jetport);
         syslog(LOG_INFO, "command port is %d", cmdport);
         syslog(LOG_INFO, "using printer \"%s\"", printer);
@@ -91,7 +95,8 @@ int main(int ac, char** av) {
     for (i = 0; i < MAX_CLIENTS; i++)
         cmd_socket[i] = 0;
 
-    if (testprinter(printer, TestMode)) {
+    if (testprinter(printer, TestMode))
+    {
         syslog(LOG_ERR, "cannot access printer %s EXIT", printer);
         return 1;
     }
@@ -99,21 +104,25 @@ int main(int ac, char** av) {
     /* fetch hp printer data from printer (toner,...)
      **********************************************/
 
-    if (init_data_listener(&data_master_fd, jetport, &dataAddress)) {
+    if (init_data_listener(&data_master_fd, jetport, &dataAddress))
+    {
         syslog(LOG_ERR, "cannot start data listener EXIT");
         return 1;
     } else if (verbose > 8) {
         printf("data listener started\n");
     }
 
-    if (init_cmd_listener(&cmd_master_fd, cmdport, &cmdAddress)) {
+    if (init_cmd_listener(&cmd_master_fd, cmdport, &cmdAddress))
+    {
         syslog(LOG_ERR, "cannot start command listener EXIT");
         return 1;
-    } else if (verbose > 8 ) {
+    } else if (verbose > 8)
+    {
         printf("command listener started\n");
     }
 
-    while (!terminating) {
+    while (!terminating)
+    {
         int activity;
         int sd;
         /*
@@ -176,7 +185,11 @@ int main(int ac, char** av) {
                 syslog(LOG_ERR, "can only handle one connection");
             } else {
                 addrlen = sizeof (dataAddress);
-                if ((client_socket = accept(data_master_fd, (struct sockaddr *) &dataAddress, &addrlen)) < 0) {
+                if ((client_socket = accept(
+                        data_master_fd,
+                        (struct sockaddr *) &dataAddress, 
+                        &addrlen))
+                        < 0) {
                     char *emsg = strerror(errno);
                     syslog(LOG_ERR, "accept: %s", emsg);
                 } else {
@@ -184,17 +197,24 @@ int main(int ac, char** av) {
                     if (verbose) {
                         syslog(LOG_INFO, "new data socket %d\n", client_socket);
                     }
-                    if ( TestMode ) {
+                    if (TestMode) {
                         printf("simulated printer connection\n");
                         print_fd = 1;
                     } else {
-                    if ( (prt=fopen(printer,"a+"))== NULL ) {
-                        syslog(LOG_ERR,"Printer open error %m");
-                        exit (1);
-                    }
-                    print_fd = fileno(prt);
+                        if ((prt = fopen(printer, "a+")) == NULL) {
+                            syslog(LOG_ERR, "Printer open error %m");
+                            exit(1);
+                        }
+                        print_fd = fileno(prt);
+                        if ( verbose )
+                            syslog(LOG_INFO,"printer is now connected to %d",
+                                    print_fd);
                     }
                     print_answer_send_to = client_socket;
+                    if ( verbose )
+                        syslog(LOG_INFO,
+                                "printer data from %d will be send to %d",
+                                print_fd, client_socket);
                 }
                 resetGuesser();
             }
@@ -212,7 +232,7 @@ int main(int ac, char** av) {
                 char *emsg = strerror(errno);
                 syslog(LOG_ERR, "accept: %s", emsg);
                 return 1;
-            } else if (verbose > 8 ) {
+            } else if (verbose > 8) {
                 printf("new command socket %d\n", new_socket);
             }
             for (i = 0; i < max_clients; i++) {
@@ -222,8 +242,8 @@ int main(int ac, char** av) {
                     break;
                 }
             }
-            if ( verbose ) 
-                syslog(LOG_INFO,"command socket %d entered at position %d\n",
+            if (verbose)
+                syslog(LOG_INFO, "command socket %d entered at position %d\n",
                     new_socket, i);
         }
         /**********************************************
@@ -238,34 +258,55 @@ int main(int ac, char** av) {
                     client_socket = 0;
                 }
                 if (print_fd) {
-                    if ( ! TestMode ) {
-                    close(print_fd);
-                    print_fd = 0;                        
+                    if (!TestMode) {
+                        close(print_fd);
+                        print_fd = 0;
                     }
                     print_answer_send_to = -1;
                 }
-            }
+            } else
+                if ( verbose )
+                    syslog(LOG_INFO,"copyTo ok");
         }
         /* 
          * is there a message from the printer?
          */
-        if ( FD_ISSET(print_fd, &readfds )) {
+        if (FD_ISSET(print_fd, &readfds)) {
             char buf[32];
             int l;
-            
-            if ( (l=read(print_fd, buf, 32-1)) < 0 ) {
-                syslog(LOG_ERR,"printer sent data and disappeared");
+
+            if ((l = read(print_fd, buf, 32 - 1)) < 0) {
+                syslog(LOG_ERR, "printer sent data and disappeared");
                 close(print_fd);
                 print_fd = 0;
                 print_answer_send_to = -1;
             }
-            buf[l+1] = '\0';
-            if ( print_answer_send_to != -1 ) {
-                if ( verbose >  8 ) {
-                    printf("<%s> sent from %d to %d\n",buf, 
+            if (l == 0) {
+                if (verbose) {
+                    syslog(LOG_INFO, "received 0 bytes - assume eof");
+                }
+# if 0
+                if (!TestMode) {
+                    close(print_fd);
+                    print_fd = 0;
+                }
+                close(print_answer_send_to);
+                if (client_socket != 0)
+                    close(client_socket);
+# endif
+            } else {
+            buf[l + 1] = '\0';
+            if (print_answer_send_to != -1) {
+                if (verbose)
+                    syslog(LOG_INFO,
+                        "got %d bytes from Printer at %d sending to socket %d",
+                        l, print_fd, print_answer_send_to);
+                if (verbose > 8) {
+                    printf("<%s> sent from %d to %d\n", buf,
                             print_fd, print_answer_send_to);
                 }
-                write(print_answer_send_to,buf,l );
+                write(print_answer_send_to, buf, l);
+            }
             }
         }
         /**********************************************
@@ -275,9 +316,9 @@ int main(int ac, char** av) {
             sd = cmd_socket[i];
             if (FD_ISSET(sd, &readfds)) {
                 if (talkTo(sd, &terminating, verbose)) {
-                    if ( sd != 0 ) {
-                    close(sd);
-                    cmd_socket[i] = 0;
+                    if (sd != 0) {
+                        close(sd);
+                        cmd_socket[i] = 0;
                     }
                 }
             }
@@ -292,9 +333,8 @@ int main(int ac, char** av) {
 
     }
     /**********************************************
-     * 
+     * bye
      **********************************************/
-
     syslog(LOG_INFO, "program ends.");
     return (EXIT_SUCCESS);
 }
