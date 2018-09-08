@@ -34,6 +34,7 @@ int main(int ac, char** av) {
     int                 data_master_fd  = 0;
     int                 cmd_master_fd   = 0;
     int                 print_fd        = 0;
+    int                 print_answer_send_to = -1;
     int                 verbose         = 0;
     int                 TestMode        = 0;
     int                 terminating     = 0;
@@ -72,6 +73,11 @@ int main(int ac, char** av) {
 
     if (TestMode) {
         printf("Testmode: I won't use a real printer\n");
+    }
+    
+    if ( verbose ) {
+        syslog(LOG_INFO, "verbosity level set to %d", verbose);
+        if ( verbose > 8 ) printf("verbosity is %d\n", verbose);
     }
 
     if (verbose > 0) {
@@ -178,11 +184,17 @@ int main(int ac, char** av) {
                     if (verbose) {
                         syslog(LOG_INFO, "new data socket %d\n", client_socket);
                     }
+                    if ( TestMode ) {
+                        printf("simulated printer connection\n");
+                        print_fd = 1;
+                    } else {
                     if ( (prt=fopen(printer,"a+"))== NULL ) {
                         syslog(LOG_ERR,"Printer open error %m");
                         exit (1);
                     }
                     print_fd = fileno(prt);
+                    }
+                    print_answer_send_to = client_socket;
                 }
                 resetGuesser();
             }
@@ -217,19 +229,44 @@ int main(int ac, char** av) {
         /**********************************************
          * process data
          **********************************************/
-        if ( FD_ISSET(client_socket, &readfds)) {
-        if (copyTo(client_socket, print_fd, verbose, TestMode)) {
-            if (verbose)
-                syslog(LOG_INFO, "copyTo returned 1 closing");
-            if (client_socket) {
-                close(client_socket);
-                client_socket = 0;
-            }
-            if (print_fd) {
-                close(print_fd);
-                print_fd = 0;
+        if (FD_ISSET(client_socket, &readfds)) {
+            if (copyTo(client_socket, print_fd, verbose, TestMode)) {
+                if (verbose)
+                    syslog(LOG_INFO, "copyTo returned 1 closing");
+                if (client_socket) {
+                    close(client_socket);
+                    client_socket = 0;
+                }
+                if (print_fd) {
+                    if ( ! TestMode ) {
+                    close(print_fd);
+                    print_fd = 0;                        
+                    }
+                    print_answer_send_to = -1;
+                }
             }
         }
+        /* 
+         * is there a message from the printer?
+         */
+        if ( FD_ISSET(print_fd, &readfds )) {
+            char buf[32];
+            int l;
+            
+            if ( (l=read(print_fd, buf, 32-1)) < 0 ) {
+                syslog(LOG_ERR,"printer sent data and disappeared");
+                close(print_fd);
+                print_fd = 0;
+                print_answer_send_to = -1;
+            }
+            buf[l+1] = '\0';
+            if ( print_answer_send_to != -1 ) {
+                if ( verbose >  8 ) {
+                    printf("<%s> sent from %d to %d\n",buf, 
+                            print_fd, print_answer_send_to);
+                }
+                write(print_answer_send_to,buf,l );
+            }
         }
         /**********************************************
          * process command

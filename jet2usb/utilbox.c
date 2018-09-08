@@ -248,22 +248,24 @@ int copyTo(int from, int to, int verbose, int testmode) {
         if ( testmode ) {
             int i;
             for (i=0; i<bytes; i++ ) {
-                if ( !(i % 16) ) printf("%04d ", i);
+                if ( !(i % 16) ) printf("\n%04d ", i);
                 printf("%02X ", (unsigned short int)buffer[i]);
-                if ( !(i % 16) ) printf("\n");
             }
         } else {
             Write(to,buffer,bytes);
-            if ( isPS()) {
+            /*if ( isPS()) {
                 int i;
                 for ( i = 0; i<bytes; i++)
                     if ( buffer[i] = (char)4 )
                         return 1;
-            }
+            }*/
         }
         return 0;
     } else { // bytes MUST be 0
         if ( testmode ) {
+            if ( isPS() ) {
+                printf("sending additional ^D\n");
+            }
             printf("EOF detected sending <ESC>%%-12345X\n");
         } else {
             if ( isPS() ) {
