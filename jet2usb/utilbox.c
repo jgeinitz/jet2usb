@@ -18,11 +18,6 @@ static int typeval;
 #define PCL 0
 #define UNSPEC -1
 
-void Write(int f, char* b, int l ) {
-    int rc;
-    rc = write(f,b,l);
-    return;
-}
 
 void resetGuesser() {
     typeval = UNSPEC;
@@ -125,7 +120,7 @@ int testprinter(char *p, int tst) {
         printf("testprinter: simulated printer is ok\n");
         return 0;
     }
-    if ( (pfd=fopen(p,"wb+")) == NULL ) {
+    if ( (pfd=fopen(p,"r+")) == NULL ) {
         return 1;
     }
     fclose(pfd);
@@ -202,7 +197,7 @@ int talkTo(int sd, int *term, int verbose) {
     
     if ( verbose > 8 )
         printf("Command Talk entered\n");
-    Write(sd, prompt, strlen(prompt));
+    (void) write(sd, prompt, strlen(prompt));
     for (i=0; i<255; i++)
         buffer[i]='\0';
     if ( (amount=read(sd,buffer,255)) < 0 ) {
@@ -225,14 +220,14 @@ int talkTo(int sd, int *term, int verbose) {
             break;
         default: {
             char *t = "Unknown: ";
-            Write(sd,t, strlen(t));
-            Write(sd, buffer, strlen(buffer));
+            (void)write(sd,t, strlen(t));
+            (void)write(sd, buffer, strlen(buffer));
         }
     }
     return 0;
 }
 
-#define RBUFS 327681
+#define RBUFS 2049
 int copyTo(int from, int to, int verbose, int testmode) {
     int bytes;
     char buffer[RBUFS];
@@ -255,13 +250,10 @@ int copyTo(int from, int to, int verbose, int testmode) {
                 printf("%02X ", (unsigned short int)buffer[i]);
             }
         } else {
-            Write(to,buffer,bytes);
-            /*if ( isPS()) {
-                int i;
-                for ( i = 0; i<bytes; i++)
-                    if ( buffer[i] = (char)4 )
-                        return 1;
-            }*/
+            if ( write(to,buffer,bytes) < 0 ) {
+                syslog(LOG_ERR,"write error to printer %m");
+                return 1;
+            }
         }
         return 0;
     } else { // bytes MUST be 0
@@ -276,11 +268,11 @@ int copyTo(int from, int to, int verbose, int testmode) {
             if ( isPS() ) {
                 char b = (char )4;
                 syslog(LOG_INFO,"send EOF char because of PS");
-                Write(to,&b,1);
+                (void)write(to,&b,1);
             }
             syslog(LOG_INFO,"sent PJL reset");
             strcpy(buffer,"\e%-12345X");
-            Write(to,buffer,strlen(buffer));
+            (void)write(to,buffer,strlen(buffer));
         }
         return 1;
     }
