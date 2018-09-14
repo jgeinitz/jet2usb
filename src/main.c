@@ -1,6 +1,7 @@
 /* 
  * File:   main.c
  * Author: Juergen Geinitz
+ * $Id$
  *
  * License: GPL
  * 
