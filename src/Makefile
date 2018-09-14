@@ -1,12 +1,12 @@
 
 
-all: jet2usb
+all: ../j2u
 
-jet2usb: main.c
-	gcc main.c -o jet2usb
+../j2u: main.c
+	gcc -g main.c -o ../j2u
 
 clean:
-	@rm -f main.o jet2usb
+	@rm -f main.o ../j2u
 
 build: all
 
