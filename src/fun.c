@@ -16,8 +16,6 @@ typedef struct t_MyStringListe {
     MyString               *text;
 } MyStringListe;
 
-MyStringListe *hexdumptext = NULL;
-
 
 MyString *newMyString(int maxlen) {
     MyString *t;
@@ -70,6 +68,36 @@ void deleteMyStringListe(MyStringListe *base) {
     }
 }
 
+#define DUMPLENGTH 8
+void hexdump(MyString *in, char *introText, int doSyslog, int doPrintf) {
+    int i,j;
+    char string1[DUMPLENGTH*4 + 8];
+    char string2[DUMPLENGTH + 8];
+    char tempString[DUMPLENGTH*4 + 8];
+    
+    if ( doSyslog ) syslog(LOG_DEBUG,">>>>>>> %s", introText);
+    if ( doPrintf ) printf(">>>>>>> %s\n", introText);
+    for ( j=0; j < in->len; j += DUMPLENGTH ) {
+        (void) strncpy(tempString, "", 2);
+        (void)sprintf(string1,"%04X", j);
+        (void) strncpy(string2, "", 2);
+        for (i=0; i < DUMPLENGTH; i++ ){
+            (void)strncpy(tempString, string1 ((DUMPLENGTH*4)+8));
+            if ( (i+j) > in->len ) {
+                (void)sprintf(string1, "%s   ", tempString);
+            } else {
+                (void)sprintf(string1, "%s %02X", tempString, in->buffer[j+i]);
+                (void) strncpy(tempString, string2, DUMPLENGTH+8 );
+                (void)sprintf(string2,"%s%c", tempString, in->buffer[j+i]);
+            }
+        }
+        if ( doSyslog )
+            syslog(LOG_DEBUG, "%s %s", string1, string2);
+        if ( doPrintf ) {
+            (void)printf("%s %s\n", string1, string2);
+        }
+    }
+}
 
 /************************************************************************/
 
