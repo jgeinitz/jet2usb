@@ -7,22 +7,10 @@
  * 
  * Started on 25. August 2018, 07:15
  */
+# include "fun.h"
+# include "version.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <syslog.h>
-#include <string.h>
-#include <sys/select.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-
+char Version[512];
 char *me;
 
 /*
@@ -32,7 +20,12 @@ int main(int ac, char** av) {
     int terminating = 0;
     
     me = av[0];
-
+    sprintf(Version, "%s_%s.%s.%s.%s",
+            me,
+            VERSION_NAME,
+            VERSION_MAJOR, VERSION_MINOR, VERSION_SUB);
+    
+    
     setup();
     parseCommandline();
     prepareSockets();
