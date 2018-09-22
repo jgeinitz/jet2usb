@@ -31,13 +31,14 @@ extern "C" {
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <arpa/inet.h>
 
 
-    void setup();
+    void setup(char *myname, char * version);
     void parseCommandline();
     void prepareSockets();
     void prepareSelect();
-    int performSelect();
+    int  performSelect();
     void readDataFromSocket();
     void readCommandSocket();
     void readDataFromPrinter();
@@ -47,7 +48,7 @@ extern "C" {
     void writeCommandSocket();
     void acceptDataSocket();
     void acceptCommandSocket();
-    int terminateRequest();
+    int  terminateRequest();
     
     
 #ifdef __cplusplus

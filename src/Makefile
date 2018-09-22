@@ -15,4 +15,8 @@ clean:
 	@rm -f main.o fun.o ../j2u
 
 build: all
+	
+run: ../j2u
+	../j2u
+
 

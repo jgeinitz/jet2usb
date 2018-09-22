@@ -25,9 +25,10 @@ int main(int ac, char** av) {
             VERSION_NAME,
             VERSION_MAJOR, VERSION_MINOR, VERSION_SUB);
     
-    
-    setup();
+    openlog(NULL, LOG_CONS | LOG_PID, LOG_LPR);
+
     parseCommandline();
+    setup(me, Version);
     prepareSockets();
     while ( !terminating ) {
         prepareSelect();
