@@ -211,7 +211,7 @@ void prepareSelect() {
     }
 }
 
-selectActions performSelect() {
+enum selectActions performSelect() {
     int activity, i;
     struct timeval tv = {60, 0};
     activity = select(max_sd + 1, &readfds, &writefds, NULL, &tv);

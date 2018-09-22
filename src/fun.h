@@ -46,7 +46,7 @@ extern "C" {
     void parseCommandline();
     void prepareSockets();
     void prepareSelect();
-    selectActions performSelect();
+    enum selectActions performSelect();
     void selectTimeout();
     void readDataFromSocket();
     void readCommandSocket();
