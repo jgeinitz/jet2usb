@@ -33,36 +33,44 @@ int main(int ac, char** av) {
     while ( !terminating ) {
         prepareSelect();
         switch ( performSelect() ) {
-            case 1:
+            case timeout:
+                selectTimeout();
+                break;
+            case readData:
                 readDataFromSocket();
                 break;
-            case 2:
+            case readCmd:
                 readCommandSocket();
                 break;
-            case 3:
+            case readPrinter:
                 readDataFromPrinter();
                 break;
-            case 4:
+            case writePrinter:
                 writeDataToPrinter();
                 break;
-            case 5:
+            case writeData:
                 writeDataToSocket();
                 break;
-            case 6:
+/*            case 6:
                 writeCommandToPrinter();
                 break;
-            case 7:
+ */
+            case writeCmd:
                 writeCommandSocket();
                 break;
-            case 8:
+            case newData:
                 acceptDataSocket();
                 break;
-            case 9:
+            case newCmd:
                 acceptCommandSocket();
                 break;
-            default:
+            case finish:
                 terminating = terminateRequest();
                 break;
+            default:
+                printf("%s: select error -- bailing out\n",me);
+                syslog(LOG_ERR,"select error");
+                terminating = 1;
         }
     }
     /**********************************************

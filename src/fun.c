@@ -16,13 +16,15 @@ struct sockaddr_in6 dataAddress;
 struct sockaddr_in  cmdAddress;
 #define MAX_CLIENTS 10
 int                 max_clients = MAX_CLIENTS;
-int                 client_socket[MAX_CLIENTS];
-int                 cmd_socket[MAX_CLIENTS];
+int                 datafd;
+int                 printfd;
+int                 cmdfd[MAX_CLIENTS], currentCmdFd;
 fd_set              readfds;
 fd_set              writefds;
 
-int                 datafd;
-int                 cmdfd;
+static int                 dataMasterFd;
+static int                 cmdMasterFd;
+static int                 max_sd;
 
 typedef struct t_MyString {
     int len;
@@ -140,54 +142,113 @@ void parseCommandline() {
 void prepareSockets() {
     int opt = 1;
     
-    if ((datafd = socket(AF_INET6, SOCK_STREAM, 0)) == 0) {
+    if ((dataMasterFd = socket(AF_INET6, SOCK_STREAM, 0)) == 0) {
         syslog(LOG_ERR, "data side - socket create failed %m");
         exit(1);
     }
-    if (setsockopt(datafd, SOL_SOCKET, SO_REUSEADDR, (char *) &opt, sizeof(opt)) < 0) {
+    if (setsockopt(dataMasterFd, SOL_SOCKET, SO_REUSEADDR, (char *) &opt, sizeof(opt)) < 0) {
         syslog(LOG_ERR, "data side - set sockopt fail: %m");
     }
     dataAddress.sin6_family = AF_INET6;
     dataAddress.sin6_addr   = in6addr_any;
     dataAddress.sin6_port   = htons(jetport);
-    if (bind(datafd, (struct sockaddr *)& dataAddress, sizeof(dataAddress) ) < 0) {
+    if (bind(dataMasterFd, (struct sockaddr *)& dataAddress, sizeof(dataAddress) ) < 0) {
         syslog(LOG_ERR, "data side - cannot bind: %m");
         exit(1);
     }
     syslog(LOG_DEBUG, "data side - listening on %d", jetport);
-    if (listen(datafd, 1) < 0) {
+    if (listen(dataMasterFd, 1) < 0) {
         syslog(LOG_ERR, "data side - cannot listen: %m");
         exit(1);
     }
     /* 2nd -- command port */
-    if ((cmdfd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+    if ((cmdMasterFd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         syslog(LOG_ERR, "cmd side - socket create failed: %m");
         exit(1);
     }
-    if (setsockopt(cmdfd, SOL_SOCKET, SO_REUSEADDR,(char *) &opt, sizeof(opt)) < 0) {
+    if (setsockopt(cmdMasterFd, SOL_SOCKET, SO_REUSEADDR,(char *) &opt, sizeof(opt)) < 0) {
         syslog(LOG_ERR, "cmd side - set sockopt fail: %m");
     }
     cmdAddress.sin_family = AF_INET;
     cmdAddress.sin_addr.s_addr = /*INADDR_ANY*/ inet_addr("127.0.0.1");
     cmdAddress.sin_port = htons(cmdport);
-    if (bind(cmdfd, (struct sockaddr *) &cmdAddress, sizeof(cmdAddress)) < 0) {
+    if (bind(cmdMasterFd, (struct sockaddr *) &cmdAddress, sizeof(cmdAddress)) < 0) {
         syslog(LOG_ERR, "cmd side - cannot bind: %m");
         exit(1);
     }
     syslog(LOG_DEBUG, "cmd side - listening on %d", cmdport);
-    if (listen(cmdfd, 10) < 0) {
+    if (listen(cmdMasterFd, 10) < 0) {
         syslog(LOG_ERR, "cmd side - cannot listen: %m");
         exit(1);
     }
 }
 
 void prepareSelect() {
-
+    int i, sd;
+    FD_ZERO(&readfds);
+    FD_ZERO(&writefds);
+    FD_SET(cmdMasterFd, &readfds);
+    max_sd = cmdMasterFd;
+    FD_SET(dataMasterFd, &readfds);
+    if (dataMasterFd > max_sd) max_sd = dataMasterFd;
+    if ( printfd > 0 ) {
+        FD_SET(printfd, &readfds);
+        FD_SET(printfd, &writefds);
+        if (printfd > max_sd) max_sd = printfd;        
+    }
+    if ( datafd > 0 ) {
+        FD_SET(datafd, &readfds);
+        FD_SET(datafd, &writefds);
+        if (datafd > max_sd) max_sd = datafd;
+    }
+    for (i = 0; i < max_clients; i++) {
+        sd = cmdfd[i];
+        if (sd > 0) {
+            FD_SET(sd, &readfds);
+            FD_SET(datafd, &writefds);
+            if (sd > max_sd) max_sd = sd;
+        }
+    }
 }
 
-int performSelect() {
-    return -1;
+selectActions performSelect() {
+    int activity, i;
+    struct timeval tv = {60, 0};
+    activity = select(max_sd + 1, &readfds, &writefds, NULL, &tv);
+    if ((activity < 0) && (errno != EINTR)) {
+        syslog(LOG_ERR, "select error: %m");
+        return error;
+    }
+    if ( activity == 0 ) return timeout;
+    if ( verbosity & 0x8 ) {
+        (void)printf("Select data avail on %d FDs", activity);
+    }
+    if (FD_ISSET(dataMasterFd, &readfds)) return newData;
+    if (FD_ISSET(cmdMasterFd, &readfds)) return newCmd;
 
+    if (FD_ISSET(datafd, &readfds)) return readData;
+    if (FD_ISSET(datafd, &writefds)) return writeData;
+    
+    if (FD_ISSET(printfd, &readfds)) return readPrinter;
+    if (FD_ISSET(printfd, &writefds)) return writePrinter;
+    for (i = 0; i < max_clients; i++) {
+        if (FD_ISSET(cmdfd[i], &readfds)) {
+            currentCmdFd = cmdfd[i];
+            return readCmd;
+        }
+    }
+    for (i = 0; i < max_clients; i++) {
+        if (FD_ISSET(cmdfd[i], &writefds)) {
+            currentCmdFd = cmdfd[i];
+            return writeCmd;      
+        }
+    }
+    
+    return error;
+}
+
+void selectTimeout() {
+    return;
 }
 
 void readDataFromSocket() {

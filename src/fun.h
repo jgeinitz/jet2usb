@@ -33,12 +33,21 @@ extern "C" {
 #include <fcntl.h>
 #include <arpa/inet.h>
 
-
+    enum selectActions {
+        readData, readCmd, readPrinter,
+        writeData, writeCmd, writePrinter,
+        newData, newCmd,
+        timeout, finish,
+        error
+    };
+    
+    
     void setup(char *myname, char * version);
     void parseCommandline();
     void prepareSockets();
     void prepareSelect();
-    int  performSelect();
+    selectActions performSelect();
+    void selectTimeout();
     void readDataFromSocket();
     void readCommandSocket();
     void readDataFromPrinter();
