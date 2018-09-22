@@ -123,9 +123,9 @@ void hexdump(MyString *in, char *introText, int doSyslog, int doPrintf) {
 /************************************************************************/
 
 
-void setup(char *myname, char *version) {
+void setup(char *version) {
     if (verbosity & VERBOSE_DBG) {
-        printf("%s %s ready\n", myname, version);
+        printf("%s ready\n", version);
         printf("Compile \"%s\" \"%s\"\n", __DATE__, __TIME__);
     }
     if (verbosity) {
@@ -221,7 +221,7 @@ enum selectActions performSelect() {
     }
     if ( activity == 0 ) return timeout;
     if ( verbosity & 0x8 ) {
-        (void)printf("Select data avail on %d FDs", activity);
+        (void)printf("Select data avail on %d FDs\n", activity);
     }
     if (FD_ISSET(dataMasterFd, &readfds)) return newData;
     if (FD_ISSET(cmdMasterFd, &readfds)) return newCmd;
@@ -248,43 +248,46 @@ enum selectActions performSelect() {
 }
 
 void selectTimeout() {
+    if (verbosity & 0x08)
+        printf("Select timeout\n");
     return;
 }
 
 void readDataFromSocket() {
-
+    if (verbosity & 0x08)
+        printf("read data from spooler to buffer\n");
 }
 
 void readCommandSocket() {
-
+    printf("read command from command channel\n");
 }
 
 void readDataFromPrinter() {
-
+    printf("read data from printer tu buffer\n");
 }
 
 void writeDataToPrinter() {
-
+    printf("write data from buffer to printer\n");
 }
 
 void writeDataToSocket() {
-
+    printf("write data from buffer to print spooler\n");
 }
 
 void writeCommandToPrinter() {
-
+    printf("send command to printer\n");
 }
 
 void writeCommandSocket() {
-
+    printf("write command result\n");
 }
 
 void acceptDataSocket() {
-
+    printf("accept Data socket\n");
 }
 
 void acceptCommandSocket() {
-
+    printf("accept command socket\n");
 }
 
 int terminateRequest() {

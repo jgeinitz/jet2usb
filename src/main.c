@@ -28,7 +28,7 @@ int main(int ac, char** av) {
     openlog(NULL, LOG_CONS | LOG_PID, LOG_LPR);
 
     parseCommandline();
-    setup(me, Version);
+    setup(Version);
     prepareSockets();
     while ( !terminating ) {
         prepareSelect();

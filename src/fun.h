@@ -42,7 +42,7 @@ extern "C" {
     };
     
     
-    void setup(char *myname, char * version);
+    void setup(char * version);
     void parseCommandline();
     void prepareSockets();
     void prepareSelect();
