@@ -67,12 +67,12 @@ void deleteMyString(MyString *t) {
     return;
 }
 
-void newMyStringListe(MyStringListe *base, int maxlen) {
+void newMyStringListe(MyStringListe *base) {
     if ((base = malloc(sizeof (MyStringListe))) == NULL) {
         syslog(LOG_ERR, "OUT OF MEMORY in MyStringListe");
         exit(253);
     }
-    base->text = newMyString(maxlen);
+    base->text = NULL;
     base->next = NULL;
     return;
 }
@@ -86,6 +86,54 @@ void deleteMyStringListe(MyStringListe *base) {
         t = t->next;
         free(u);
     }
+}
+
+void MyStringListeInsertEnd(MyStringListe *head, MyString *s) {
+    MyStringListe *t, *u;
+    if ( head == NULL ) {
+        newMyStringListe(&head);
+        head->text = s;
+        return;
+    }
+    for ( t=head; t->next != NULL ; t = t->next )
+        ;
+    newMyStringListe(&u);
+    t->next = u;
+    u->text = s;
+}
+
+void MyStringListeInsertFront(MyStringListe *head, MyString*s) {
+    MyStringListe *t, *u;
+    if ( head == NULL ) {
+        newMyStringListe(&head);
+        head->text = s;
+        return;
+    }
+    newMyStringListe(&u);
+    u->text = s;
+    u->next = head;
+    head = u;
+
+}
+
+MyString MyStringListeFetchEnd(MyStringListe *head) {
+    MyStringListe *t, *u;
+    MyString *s;
+    if ( head == NULL ) return NULL;
+    t = head;
+    u = NULL;
+    while ( t->next != NULL ) {
+        u = t;
+        t = t->next;
+    }
+    s = t->text;
+    if ( t->next != NULL ) {
+        u->next = t->next;
+        free(t->next);
+    }
+    free(t);
+    t = NULL;
+    return(s);
 }
 
 #define DUMPLENGTH 8
