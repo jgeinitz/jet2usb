@@ -91,13 +91,13 @@ void deleteMyStringListe(MyStringListe *base) {
 void MyStringListeInsertEnd(MyStringListe *head, MyString *s) {
     MyStringListe *t, *u;
     if ( head == NULL ) {
-        newMyStringListe(&head);
+        newMyStringListe(head);
         head->text = s;
         return;
     }
     for ( t=head; t->next != NULL ; t = t->next )
         ;
-    newMyStringListe(&u);
+    newMyStringListe(u);
     t->next = u;
     u->text = s;
 }
@@ -105,21 +105,21 @@ void MyStringListeInsertEnd(MyStringListe *head, MyString *s) {
 void MyStringListeInsertFront(MyStringListe *head, MyString*s) {
     MyStringListe *t, *u;
     if ( head == NULL ) {
-        newMyStringListe(&head);
+        newMyStringListe(head);
         head->text = s;
         return;
     }
-    newMyStringListe(&u);
+    newMyStringListe(u);
     u->text = s;
     u->next = head;
     head = u;
 
 }
 
-MyString MyStringListeFetchEnd(MyStringListe *head) {
+MyString *MyStringListeFetchEnd(MyStringListe *head) {
     MyStringListe *t, *u;
     MyString *s;
-    if ( head == NULL ) return NULL;
+    if ( head == NULL ) return (void *)NULL;
     t = head;
     u = NULL;
     while ( t->next != NULL ) {
