@@ -124,13 +124,14 @@ void hexdump(MyString *in, char *introText, int doSyslog, int doPrintf) {
 
 
 void setup(char *version) {
+    char *msg = "compiled \"%s\" \"%s\"%s";
     if (verbosity & VERBOSE_DBG) {
         printf("%s ready\n", version);
-        printf("Compile \"%s\" \"%s\"\n", __DATE__, __TIME__);
+        printf(msg, __DATE__, __TIME__, "\n");
     }
     if (verbosity) {
         syslog(LOG_INFO, version);
-        syslog(LOG_INFO, "Compile \"%s\" \"%s\"", __DATE__, __TIME__);
+        syslog(LOG_INFO, "Compile \"%s\" \"%s\"", __DATE__, __TIME__,"");
     }
     return;
 }
