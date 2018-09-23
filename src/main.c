@@ -20,7 +20,7 @@ int main(int ac, char** av) {
     int terminating = 0;
     
     me = av[0];
-    sprintf(Version, "%s_%s.%s.%s.%s",
+    (void) snprintf(Version, 512, "%s_%s.%s.%s.%s",
             me,
             VERSION_NAME,
             VERSION_MAJOR, VERSION_MINOR, VERSION_SUB);

@@ -1,7 +1,5 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ gei
  */
 #include "fun.h"
 
@@ -18,13 +16,16 @@ struct sockaddr_in  cmdAddress;
 int                 max_clients = MAX_CLIENTS;
 int                 datafd;
 int                 printfd;
-int                 cmdfd[MAX_CLIENTS], currentCmdFd;
+int                 cmdfd[MAX_CLIENTS],
+                    currentCmdFd;
 fd_set              readfds;
 fd_set              writefds;
 
-static int                 dataMasterFd;
-static int                 cmdMasterFd;
-static int                 max_sd;
+static int          dataMasterFd;
+static int          cmdMasterFd;
+static int          max_sd;
+
+/*****************************************************************/
 
 typedef struct t_MyString {
     int len;
@@ -36,6 +37,8 @@ typedef struct t_MyStringListe {
     struct t_MyStringListe *next;
     MyString *text;
 } MyStringListe;
+
+MyStringListe *DataHead = NULL;
 
 MyString *newMyString(int maxlen) {
     MyString *t;
@@ -67,14 +70,15 @@ void deleteMyString(MyString *t) {
     return;
 }
 
-void newMyStringListe(MyStringListe *base) {
-    if ((base = malloc(sizeof (MyStringListe))) == NULL) {
+MyStringListe *newMyStringListe() {
+    MyStringListe *b;
+    if ((b = malloc(sizeof (MyStringListe))) == NULL) {
         syslog(LOG_ERR, "OUT OF MEMORY in MyStringListe");
         exit(253);
     }
-    base->text = NULL;
-    base->next = NULL;
-    return;
+    b->text = NULL;
+    b->next = NULL;
+    return b;
 }
 
 void deleteMyStringListe(MyStringListe *base) {
@@ -88,39 +92,47 @@ void deleteMyStringListe(MyStringListe *base) {
     }
 }
 
-void MyStringListeInsertEnd(MyStringListe *head, MyString *s) {
-    MyStringListe *t, *u;
-    if ( head == NULL ) {
-        newMyStringListe(head);
-        head->text = s;
+void MyStringListeInsertEnd(MyStringListe **head, MyString *s) {
+    MyStringListe *t, *u, *x;
+    x = *head;
+    if ( x == NULL ) {
+        x = newMyStringListe();
+        x->next = NULL;
+        x->text = s;
+        *head = x;
         return;
     }
-    for ( t=head; t->next != NULL ; t = t->next )
+    for ( t=x; t->next != NULL ; t = t->next )
         ;
-    newMyStringListe(u);
+    u = newMyStringListe();
     t->next = u;
     u->text = s;
 }
 
-void MyStringListeInsertFront(MyStringListe *head, MyString*s) {
-    MyStringListe *t, *u;
-    if ( head == NULL ) {
-        newMyStringListe(head);
-        head->text = s;
+void MyStringListeInsertFront(MyStringListe **head, MyString*s) {
+    MyStringListe *u;
+    MyStringListe *x;
+    x = *head;
+    if ( x == NULL ) {
+        x = newMyStringListe();
+        x->next = NULL;
+        x->text = s;
+        *head = x;
         return;
     }
-    newMyStringListe(u);
+    u = newMyStringListe();
     u->text = s;
-    u->next = head;
-    head = u;
+    u->next = *head;
+    *head = u;
 
 }
 
-MyString *MyStringListeFetchEnd(MyStringListe *head) {
-    MyStringListe *t, *u;
+MyString *MyStringListeFetchEnd(MyStringListe **head) {
+    MyStringListe *t, *u, *x;
     MyString *s;
-    if ( head == NULL ) return (void *)NULL;
-    t = head;
+    x = *head;
+    if ( x == NULL ) return (void *)NULL;
+    t = x;
     u = NULL;
     while ( t->next != NULL ) {
         u = t;
@@ -148,16 +160,19 @@ void hexdump(MyString *in, char *introText, int doSyslog, int doPrintf) {
     if (doPrintf) printf(">>>>>>> %s\n", introText);
     for (j = 0; j < in->len; j += DUMPLENGTH) {
         (void) strncpy(tempString, "", 2);
-        (void) sprintf(string1, "%04X", (int) j);
+        (void) snprintf(string1, DUMPLENGTH*4 + 8, "%04X", (int) j);
         (void) strncpy(string2, "", 2);
         for (i = 0; i < DUMPLENGTH; i++) {
             (void) strncpy(tempString, string1, ((DUMPLENGTH * 4) + 8));
             if ((i + j) > in->len) {
-                (void) sprintf(string1, "%s   ", tempString);
+                (void) snprintf(string1,DUMPLENGTH * 4 + 8, "%s   ",
+                        tempString);
             } else {
-                (void) sprintf(string1, "%s %02X", tempString, in->buffer[j + i]);
+                (void) snprintf(string1,DUMPLENGTH*4 + 8, "%s %02X",
+                        tempString, in->buffer[j + i]);
                 (void) strncpy(tempString, string2, DUMPLENGTH + 8);
-                (void) sprintf(string2, "%s%c", tempString, (char) in->buffer[j + i]);
+                (void) snprintf(string2,DUMPLENGTH+8, "%s%c",
+                        tempString, (char) in->buffer[j + i]);
             }
         }
         if (doSyslog)
@@ -195,13 +210,15 @@ void prepareSockets() {
         syslog(LOG_ERR, "data side - socket create failed %m");
         exit(1);
     }
-    if (setsockopt(dataMasterFd, SOL_SOCKET, SO_REUSEADDR, (char *) &opt, sizeof(opt)) < 0) {
+    if ( setsockopt(dataMasterFd, SOL_SOCKET, SO_REUSEADDR,
+            (char *) &opt, sizeof(opt) ) < 0 ) {
         syslog(LOG_ERR, "data side - set sockopt fail: %m");
     }
     dataAddress.sin6_family = AF_INET6;
     dataAddress.sin6_addr   = in6addr_any;
     dataAddress.sin6_port   = htons(jetport);
-    if (bind(dataMasterFd, (struct sockaddr *)& dataAddress, sizeof(dataAddress) ) < 0) {
+    if (bind( dataMasterFd, (struct sockaddr *)& dataAddress,
+            sizeof(dataAddress) ) < 0) {
         syslog(LOG_ERR, "data side - cannot bind: %m");
         exit(1);
     }
@@ -215,13 +232,15 @@ void prepareSockets() {
         syslog(LOG_ERR, "cmd side - socket create failed: %m");
         exit(1);
     }
-    if (setsockopt(cmdMasterFd, SOL_SOCKET, SO_REUSEADDR,(char *) &opt, sizeof(opt)) < 0) {
+    if (setsockopt(cmdMasterFd, SOL_SOCKET, SO_REUSEADDR,(char *) &opt,
+            sizeof(opt)) < 0) {
         syslog(LOG_ERR, "cmd side - set sockopt fail: %m");
     }
     cmdAddress.sin_family = AF_INET;
     cmdAddress.sin_addr.s_addr = /*INADDR_ANY*/ inet_addr("127.0.0.1");
     cmdAddress.sin_port = htons(cmdport);
-    if (bind(cmdMasterFd, (struct sockaddr *) &cmdAddress, sizeof(cmdAddress)) < 0) {
+    if (bind(cmdMasterFd, (struct sockaddr *) &cmdAddress,
+            sizeof(cmdAddress)) < 0) {
         syslog(LOG_ERR, "cmd side - cannot bind: %m");
         exit(1);
     }
@@ -247,7 +266,7 @@ void prepareSelect() {
     }
     if ( datafd > 0 ) {
         FD_SET(datafd, &readfds);
-        FD_SET(datafd, &writefds);
+        // FD_SET(datafd, &writefds);
         if (datafd > max_sd) max_sd = datafd;
     }
     for (i = 0; i < max_clients; i++) {
@@ -302,9 +321,35 @@ void selectTimeout() {
     return;
 }
 
+#define READBUFFERMAX 4096
 void readDataFromSocket() {
-    if (verbosity & 0x08)
-        printf("read data from spooler to buffer\n");
+    uint8_t buffer[READBUFFERMAX];
+    int bytesRead;
+    uint8_t *s;
+    MyString *m;
+
+    (void *)memset(buffer,'\0', READBUFFERMAX);
+    if ( (bytesRead = read(datafd,buffer,READBUFFERMAX)) < 0 ) {
+        syslog(LOG_ERR,"read error from data socket: %m");
+        close(datafd);
+        datafd = 0;
+        return;
+    }
+    if ( bytesRead == 0 ) { // EOF
+        if ( verbosity ) syslog(LOG_INFO, "EOF on data socket");
+        close(datafd);
+        datafd = 0;
+        return;
+    }
+    m = newMyString(bytesRead);
+    strncpy(m->buffer,buffer, bytesRead);
+    m->len = bytesRead;
+    
+    MyStringListeInsertFront(&DataHead, m);
+    
+    if (verbosity & 0x08) {
+        hexdump(m, "Data Read from Socket", verbosity & 2 , verbosity & 0x0a);
+    }
 }
 
 void readCommandSocket() {
@@ -331,8 +376,24 @@ void writeCommandSocket() {
     printf("write command result\n");
 }
 
+int connectToPrinter() {
+    printf("connect to printer\n");
+    return 0;
+}
+
 void acceptDataSocket() {
-    printf("accept Data socket\n");
+    int addrlen;
+
+    addrlen = sizeof (dataAddress);
+    if ((datafd = accept(dataMasterFd,(struct sockaddr *) &dataAddress,
+            (socklen_t *) & addrlen)) < 0) {
+        syslog(LOG_ERR, "accept: %m");
+        exit(1);
+    }
+    if ( connectToPrinter() ) {
+        close(datafd);
+        datafd = 0;
+    }
 }
 
 void acceptCommandSocket() {

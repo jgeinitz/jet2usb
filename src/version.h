@@ -8,4 +8,4 @@
 #  define VERSION_NAME  "J2U"
 #  define VERSION_MAJOR "0"
 #  define VERSION_MINOR "0"
-#  define VERSION_SUB   "2"
+#  define VERSION_SUB   "3"
