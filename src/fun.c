@@ -164,15 +164,20 @@ void hexdump(MyString *in, char *introText, int doSyslog, int doPrintf) {
         (void) strncpy(string2, "", 2);
         for (i = 0; i < DUMPLENGTH; i++) {
             (void) strncpy(tempString, string1, ((DUMPLENGTH * 4) + 8));
-            if ((i + j) > in->len) {
+            if ((i + j) >= in->len) {
                 (void) snprintf(string1,DUMPLENGTH * 4 + 8, "%s   ",
                         tempString);
             } else {
+                uint8_t c = in->buffer[i+j];
                 (void) snprintf(string1,DUMPLENGTH*4 + 8, "%s %02X",
-                        tempString, in->buffer[j + i]);
+                        tempString, c);
                 (void) strncpy(tempString, string2, DUMPLENGTH + 8);
-                (void) snprintf(string2,DUMPLENGTH+8, "%s%c",
-                        tempString, (char) in->buffer[j + i]);
+                if ( (c>= ' ') && (c <='z' )) {
+                    (void) snprintf(string2,DUMPLENGTH+8, "%s%c",
+                            tempString, (char) c);            
+                } else {
+                    (void) snprintf(string2,DUMPLENGTH+8, "%s.", tempString);
+                }
             }
         }
         if (doSyslog)
