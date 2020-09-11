@@ -12,4 +12,4 @@ jet2usb: src/jet2usb
 
 clean:
 	$(MAKE) -C src $@
-	@/bin/rm jet2usb
+	-/bin/rm jet2usb

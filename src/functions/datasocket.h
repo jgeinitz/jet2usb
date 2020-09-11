@@ -14,9 +14,9 @@ extern "C" {
 #include <netinet/in.h>
 
 
-int init_data_listener(int *fds, int port,struct sockaddr_in6 *dataAddress);
+int init_data_listener(int *fds, int port);
 
-
+int new_data_socket(int verb, int master_fd, int *socket );
 
 #ifdef __cplusplus
 }

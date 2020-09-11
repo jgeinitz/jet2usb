@@ -19,6 +19,6 @@ tool.a:
 	cp functions/tool.a $@
 	
 clean:
-	@/bin/rm -f jet2usb *.o version.h
+	@/bin/rm -f jet2usb *.o version.h tool.a
 	$(MAKE) -C functions clean
 

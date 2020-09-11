@@ -15,11 +15,12 @@
 #include <netinet/in.h>
 #include <syslog.h>
 
+static struct sockaddr_in6 dataAddress;
+
 
 int init_data_listener(
 		int *fds,
-		int port,
-		struct sockaddr_in6 *dataAddress ) {
+		int port) {
 
     int opt = 1;
 
@@ -31,10 +32,10 @@ int init_data_listener(
             (char *) &opt, sizeof(opt)) < 0) {
         syslog(LOG_ERR, "data side - set sockopt fail: %m");
     }
-    dataAddress->sin6_family = AF_INET6;
-    dataAddress->sin6_addr   = in6addr_any;
-    dataAddress->sin6_port   = htons(port);
-    if (bind(*fds,(struct sockaddr *) dataAddress, sizeof(*dataAddress) ) < 0) {
+    dataAddress.sin6_family = AF_INET6;
+    dataAddress.sin6_addr   = in6addr_any;
+    dataAddress.sin6_port   = htons(port);
+    if (bind(*fds,(struct sockaddr *) &dataAddress, sizeof(dataAddress) ) < 0) {
         syslog(LOG_ERR, "data side - cannot bind: %m");
         return 1;
     }
@@ -45,3 +46,26 @@ int init_data_listener(
     }
     return 0;
 }
+
+int new_data_socket(int verb, int master_fd, int *socket )
+{
+    int addrlen;
+
+    if (verb)
+        syslog(LOG_DEBUG,"new data socket request\n");
+
+    if (*socket != 0) {
+        syslog(LOG_ERR, "can only handle one connection at a time");
+    } else {
+        addrlen = sizeof (dataAddress);
+        if ((*socket = accept(master_fd,(struct sockaddr *) &dataAddress,
+                &addrlen))  < 0) {
+            syslog(LOG_ERR, "accept: %m");
+        } else {
+            if (verb) {
+                syslog(LOG_INFO, "new data socket %d\n", *socket);
+            }
+        }
+    }
+}
+

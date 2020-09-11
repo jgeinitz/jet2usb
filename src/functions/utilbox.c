@@ -13,11 +13,11 @@
 
 #define TRUE 1
 
+#if 0
 static int typeval;
 #define PS 1
 #define PCL 0
 #define UNSPEC -1
-
 
 void resetGuesser() {
     typeval = UNSPEC;
@@ -41,7 +41,7 @@ int isPS() {
         return 1;
     return 0;
 }
-
+#endif
 
 int parsearguments(int ac, char **av,
         int *verbose,
@@ -129,7 +129,7 @@ int copyTo(int from, int to, int verbose, int testmode) {
             syslog(LOG_INFO,"rcv'd %d bytes from socket %d will send to %d",
                     bytes, from, to);
         }
-        guessJob(buffer,255);
+        //guessJob(buffer,255);
         if ( testmode ) {
             int i;
             for (i=0; i<bytes; i++ ) {
@@ -146,7 +146,7 @@ int copyTo(int from, int to, int verbose, int testmode) {
     } else { // bytes MUST be 0
         if ( verbose )
             syslog(LOG_INFO,"received 0 bytes assume EOF");
-        if ( testmode ) {
+/*        if ( testmode ) {
             if ( isPS() ) {
                 printf("sending additional ^D\n");
             }
@@ -161,6 +161,7 @@ int copyTo(int from, int to, int verbose, int testmode) {
             strcpy(buffer,"\e%-12345X");
             (void)write(to,buffer,strlen(buffer));
         }
+        */
         return 1;
     }
 }
