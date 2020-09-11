@@ -2,7 +2,8 @@
 # all
 CFLAGS=-g
 LDFLAGS=-g
-all: jet2usb
+
+all: clean jet2usb
 
 jet2usb: jet2usb.o tool.a
 	gcc -o $@ jet2usb.o tool.a

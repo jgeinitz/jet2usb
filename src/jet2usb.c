@@ -54,7 +54,7 @@ int main(int ac, char** av) {
     int cmd_master_fd = 0;
     int print_fd = 0;
     int print_answer_send_to = -1;
-    int verbose = 0;
+    int verbose = 1;
     int TestMode = 0;
     int terminating = 0;
     int jetport = 9100;
@@ -64,10 +64,9 @@ int main(int ac, char** av) {
     struct timeval tv;
 #define MAX_CLIENTS 10
     int max_clients = MAX_CLIENTS;
-    int client_socket;
+    int client_socket = 0;
     int cmd_socket[MAX_CLIENTS];
     fd_set readfds;
-    fd_set writefds;
     int max_sd;
 
 
@@ -133,24 +132,24 @@ int main(int ac, char** av) {
             syslog(LOG_DEBUG,"mainloop top");
 
         FD_ZERO(&readfds);
-        FD_ZERO(&writefds);
 
         FD_SET(cmd_master_fd, &readfds);
         max_sd = cmd_master_fd;
 
         FD_SET(data_master_fd, &readfds);
-        if (data_master_fd > max_sd) max_sd = data_master_fd;
+        if (data_master_fd > max_sd)
+        	max_sd = data_master_fd;
 
         if (print_fd != 0) {
             FD_SET(print_fd, &readfds);
-            FD_SET(print_fd, &writefds);
-            if (print_fd > max_sd) max_sd = print_fd;
+            if (print_fd > max_sd)
+            	max_sd = print_fd;
         }
 
         if (client_socket != 0) {
             FD_SET(client_socket, &readfds);
-            FD_SET(client_socket, &writefds);
-            if (client_socket > max_sd) max_sd = client_socket;
+            if (client_socket > max_sd)
+            	max_sd = client_socket;
         }
 
         for (i = 0; i < max_clients; i++) {
@@ -176,13 +175,6 @@ int main(int ac, char** av) {
             syslog(LOG_ERR, "select error: %s", emsg);
         }
 
-        for (i = 0; i < max_sd; i++) {
-            if (FD_ISSET(i, &writefds)) {
-                if (verbose > 8)
-                    syslog(LOG_INFO, "writefd # %d set by select\n", i);
-                continue;
-            }
-        }
 
         /**********************************************
          * new data socket
@@ -191,7 +183,7 @@ int main(int ac, char** av) {
             int addrlen;
 
             if (verbose > 8)
-                printf("new data socket request\n");
+                syslog(LOG_DEBUG,"new data socket request\n");
 
             if (client_socket != 0) {
                 syslog(LOG_ERR, "can only handle one connection");
@@ -209,7 +201,7 @@ int main(int ac, char** av) {
                         syslog(LOG_INFO, "new data socket %d\n", client_socket);
                     }
                     if (TestMode) {
-                        printf("simulated printer connection\n");
+                        syslog(LOG_DEBUG,"simulated printer connection\n");
                         print_fd = 1;
                     } else {
                         if ((print_fd = open(printer, O_RDWR)) < 0) {
@@ -241,11 +233,10 @@ int main(int ac, char** av) {
             if ((new_socket = accept(cmd_master_fd,
                     (struct sockaddr *) &cmdAddress,
                     &addrlen)) < 0) {
-                char *emsg = strerror(errno);
-                syslog(LOG_ERR, "accept: %s", emsg);
+                syslog(LOG_ERR, "accept error: %m");
                 return 1;
-            } else if (verbose > 8) {
-                printf("new command socket %d\n", new_socket);
+            } else if (verbose) {
+                syslog(LOG_DEBUG, "new command socket %d\n", new_socket);
             }
             for (i = 0; i < max_clients; i++) {
                 //if position is empty
@@ -255,7 +246,7 @@ int main(int ac, char** av) {
                 }
             }
             {
-                char *hello = "Command interface started\nenter cmd\n";
+                char *hello = "201 Command interface started\n200 enter cmd\n";
                 write(new_socket, hello, strlen(hello));
             }
             if (verbose)
@@ -292,7 +283,7 @@ int main(int ac, char** av) {
             int l;
 
             if ((l = read(print_fd, buf, 16384 - 1)) < 0) {
-                syslog(LOG_ERR, "printer sent data and disappeared");
+                syslog(LOG_ERR, "printer sent us data and disappeared");
                 close(print_fd);
                 print_fd = 0;
                 print_answer_send_to = -1;
@@ -317,8 +308,8 @@ int main(int ac, char** av) {
                         syslog(LOG_INFO,
                             "got %d bytes from Printer at %d sending to socket %d",
                             l, print_fd, print_answer_send_to);
-                    if (verbose > 8) {
-                        printf("<%s> sent from %d to %d\n", buf,
+                    if (verbose) {
+                        syslog(LOG_DEBUG, "<%s> sent from %d to %d\n", buf,
                                 print_fd, print_answer_send_to);
                     }
 //                    if (verbose > 1) sysloghexdump(buf, l);

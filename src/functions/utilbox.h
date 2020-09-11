@@ -24,8 +24,6 @@ int parsearguments(
         char  *printer,
         int    printermaxlen);
 
-int talkTo(int sd, int *t, int v);
-
 int copyTo(int from, int to, int verbose, int tst);
 
 void resetGuesser();

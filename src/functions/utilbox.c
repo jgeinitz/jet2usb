@@ -71,11 +71,11 @@ int parsearguments(int ac, char **av,
             {"jetport", required_argument, 0, 'j'},
             {"printer", required_argument, 0, 'p'},
             {"cmdport", required_argument, 0, 'c'},
-            {"verbose", no_argument,       0, 'v'},
+            {"quiet",   no_argument,       0, 'q'},
             {"testmode", no_argument,      0, 'T'},
             { 0, 0, 0, 0}
         };
-        c = getopt_long(ac, av, "j:p:c:vT", long_options, &option_index);
+        c = getopt_long(ac, av, "j:p:c:qT", long_options, &option_index);
         if (c == -1) break;
         switch (c) {
             case 0:
@@ -84,8 +84,8 @@ int parsearguments(int ac, char **av,
                     printf(" with arg \"%s\"", optarg);
                 printf("\n");
                 break;
-            case 'v':
-                *verbose += 1;
+            case 'q':
+                *verbose = 0;
                 break;
             case 'p':
                 strncpy(p,optarg,p_max_len);
@@ -113,44 +113,6 @@ int parsearguments(int ac, char **av,
 }
 
 
-
-int talkTo(int sd, int *term, int verbose) {
-    char buffer[255];
-    int amount;
-    int i;
-    char *prompt = "\r\nJet:\r\n";
-    
-    if ( verbose > 8 )
-        printf("Command Talk entered\n");
-    (void) write(sd, prompt, strlen(prompt));
-    for (i=0; i<255; i++)
-        buffer[i]='\0';
-    if ( (amount=read(sd,buffer,255)) < 0 ) {
-        return 1;
-    }
-    if ( amount == 0 ) {
-        if ( verbose > 8 ) {
-            printf("Command channel EOF\n");
-        }
-        return 1;
-    }
-    if ( amount < 255 ) amount++;
-    buffer[amount] = '\0';
-    
-    switch ( buffer[0] ) {
-        case 'q':
-            return 1;
-        case 't':
-            *term = 1;
-            break;
-        default: {
-            char *t = "Unknown: ";
-            (void)write(sd,t, strlen(t));
-            (void)write(sd, buffer, strlen(buffer));
-        }
-    }
-    return 0;
-}
 
 #define RBUFS 2049
 int copyTo(int from, int to, int verbose, int testmode) {
