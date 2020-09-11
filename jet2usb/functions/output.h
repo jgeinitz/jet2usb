@@ -1,0 +1,4 @@
+/*
+ * output to destination device
+ *
+ */
