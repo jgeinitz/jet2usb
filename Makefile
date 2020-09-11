@@ -1,7 +1,7 @@
 #
 # 
 #
-
+CFLAGS=-g
 all: build jet2usb
 
 build:

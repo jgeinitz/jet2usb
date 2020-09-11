@@ -21,14 +21,27 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-
-
 #include "functions/functions.h"
 
 static char *me;
 
+/***
+ * setup th syslog mechanism
+ * verbosity
+ */
+void messagesetup(int verbose) {
+    int flag = (LOG_CONS | LOG_PID);
+    if (verbose)
+        flag |= LOG_PERROR;
+
+    openlog(NULL, flag, LOG_LPR);
+}
+
 /*
- * 
+ *
+ *
+ *
+ *
  */
 int main(int ac, char** av) {
 
@@ -57,14 +70,7 @@ int main(int ac, char** av) {
     fd_set writefds;
     int max_sd;
 
-    {
-        int flag = (LOG_CONS | LOG_PID);
-        if (verbose)
-            flag |= LOG_PERROR;
-        openlog(NULL, flag, LOG_LPR);
-    }
 
-    syslog(LOG_INFO, "starting");
     strncpy(printer, "/dev/usb/lp0", P_MAX_LEN);
 
 
@@ -79,48 +85,42 @@ int main(int ac, char** av) {
         exit(1);
     }
 
+    messagesetup(verbose);
+
+
+    syslog(LOG_DEBUG, "=========================");
+    syslog(LOG_INFO, "%s starting", me);
+
     if (TestMode) {
-        printf("Testmode: I won't use a real printer\n");
+        syslog(LOG_INFO, "Testmode: I won't use a real printer");
     }
 
     if (verbose) {
         syslog(LOG_INFO, "verbosity level set to %d", verbose);
-        if (verbose > 8) printf("verbosity is %d\n", verbose);
-    }
 
-    if (verbose > 0) {
-        syslog(LOG_INFO, "jetdirect port is %d", jetport);
+    	syslog(LOG_INFO, "jetdirect port is %d", jetport);
         syslog(LOG_INFO, "command port is %d", cmdport);
         syslog(LOG_INFO, "using printer \"%s\"", printer);
     }
 
-    client_socket = 0;
-
-    for (i = 0; i < MAX_CLIENTS; i++)
-        cmd_socket[i] = 0;
-
     if (testprinter(printer, TestMode)) {
-	if ( verbose > 8 )
-		fprintf(stderr,"%s: cannot access %s\n", me, printer);
         syslog(LOG_ERR, "cannot access printer %s EXIT", printer);
         return 1;
     }
 
-    /* fetch hp printer data from printer (toner,...)
-     **********************************************/
 
     if (init_data_listener(&data_master_fd, jetport, &dataAddress)) {
         syslog(LOG_ERR, "cannot start data listener EXIT");
         return 1;
     } else if (verbose > 8) {
-        printf("data listener started\n");
+        syslog(LOG_DEBUG,"data listener started");
     }
 
     if (init_cmd_listener(&cmd_master_fd, cmdport, &cmdAddress)) {
         syslog(LOG_ERR, "cannot start command listener EXIT");
         return 1;
     } else if (verbose > 8) {
-        printf("command listener started\n");
+        syslog(LOG_DEBUG, "command listener started");
     }
 
     while (!terminating) {
@@ -130,7 +130,7 @@ int main(int ac, char** av) {
          ***** select prepare
          */
         if (verbose > 8)
-            printf("mainloop top\n");
+            syslog(LOG_DEBUG,"mainloop top");
 
         FD_ZERO(&readfds);
         FD_ZERO(&writefds);

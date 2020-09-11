@@ -1,4 +1,0 @@
-/*
- * systlog and printing
- */
-

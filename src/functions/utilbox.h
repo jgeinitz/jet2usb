@@ -24,12 +24,6 @@ int parsearguments(
         char  *printer,
         int    printermaxlen);
 
-int testprinter(char *printer, int testmode);
-
-int init_data_listener(int *fds, int port,struct sockaddr_in6 *dataAddress);
-
-int init_cmd_listener(int *fds, int port,struct sockaddr_in *dataAddress);
-
 int talkTo(int sd, int *t, int v);
 
 int copyTo(int from, int to, int verbose, int tst);
