@@ -22,6 +22,7 @@
 #include <fcntl.h>
 
 #include "functions/functions.h"
+#include "version.h"
 
 static char *me;
 
@@ -73,9 +74,11 @@ int main(int ac, char** av) {
     strncpy(printer, "/dev/usb/lp0", P_MAX_LEN);
 
 
-    if (parsearguments(ac, av,
+    if (parsearguments(
+    		ac, av,
             &verbose,
-            &jetport, &cmdport,
+            &jetport,
+			&cmdport,
             &TestMode,
             printer, P_MAX_LEN)) {
 
@@ -88,7 +91,7 @@ int main(int ac, char** av) {
 
 
     syslog(LOG_DEBUG, "=========================");
-    syslog(LOG_INFO, "%s starting", me);
+    syslog(LOG_INFO, "%s V %d.%d build %s starting", me, MAJOR, MINOR, BUILD);
 
     if (TestMode) {
         syslog(LOG_INFO, "Testmode: I won't use a real printer");
