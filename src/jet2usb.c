@@ -146,6 +146,8 @@ int main(int ac, char** av) {
         cmd_socket[i] = 0;
 
     if (testprinter(printer, TestMode)) {
+	if ( verbose > 8 )
+		fprintf(stderr,"%s: cannot access %s\n", me, printer);
         syslog(LOG_ERR, "cannot access printer %s EXIT", printer);
         return 1;
     }
