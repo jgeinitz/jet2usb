@@ -8,11 +8,10 @@
 #include <syslog.h>
 #include <unistd.h>
 
-FILE *pfd = NULL;
+static FILE *pfd = NULL;
 
 
-
-int testprinter(char *p, int tst) {
+int testprinter(char *p, int *printerfd, int tst) {
 
     if ( tst ) {
         syslog(LOG_DEBUG, "testprinter: simulated printer is ok\n");
@@ -22,6 +21,7 @@ int testprinter(char *p, int tst) {
     	syslog(LOG_ERR,"cannot open %s \"%m\"", p);
         return 1;
     }
+    *printerfd = fileno(pfd);
     return 0;
 }
 

@@ -87,7 +87,7 @@ int main(int ac, char** av) {
         syslog(LOG_INFO, "using printer  \"%s\"", printer);
     }
 
-    if (testprinter(printer, TestMode)) {
+    if (testprinter(printer, &print_fd, TestMode)) {
         syslog(LOG_ERR, "FATAL: cannot access printer %s", printer);
         fatalexit();
     }
