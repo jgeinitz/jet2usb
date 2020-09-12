@@ -10,6 +10,7 @@
 
 static FILE *pfd = NULL;
 
+static char pname[256];
 
 int testprinter(char *p, int *printerfd, int tst) {
 
@@ -17,6 +18,7 @@ int testprinter(char *p, int *printerfd, int tst) {
         syslog(LOG_DEBUG, "testprinter: simulated printer is ok\n");
         return 0;
     }
+    strncpy(pname, p, 256);
     if ( (pfd=fopen(p,"r+")) == NULL ) {
     	syslog(LOG_ERR,"cannot open %s \"%m\"", p);
         return 1;
@@ -39,6 +41,14 @@ int copyfrom(int *print_fd, int *datasocket, int verbose) {
 		if (verbose) {
 			syslog(LOG_INFO, "received 0 bytes from printer");
 		}
+		fclose(pfd);
+		close(*print_fd);
+		if ( (pfd=fopen(pname,"a+")) != NULL ) {
+			*print_fd = fileno(pfd);
+		} else {
+			*print_fd = 0;
+		}
+
 	} else {
 		buf[l + 1] = '\0';
 		if (verbose)

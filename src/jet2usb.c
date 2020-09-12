@@ -163,7 +163,7 @@ int main(int ac, char** av) {
          * copy data from data socket to printer*/
         if (FD_ISSET(client_socket, &readfds)) {
         	int rc = copyTo(&client_socket, print_fd, verbose, TestMode);
-        	if ( verbose ) syslog(LOG_DEBUG,"new data channel returned %d", rc);
+        	if ( verbose && (rc != 0 ) ) syslog(LOG_DEBUG,"data channel returned %d", rc);
         }
         /**********************************************
          * data from printer send it to data socket */
