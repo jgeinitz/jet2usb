@@ -43,11 +43,18 @@ int copyfrom(int *print_fd, int *datasocket, int verbose) {
 		buf[l + 1] = '\0';
 		if (verbose)
 			syslog(LOG_INFO,
-					"got %d bytes from Printer at %d sending to socket %d", l,
-					*print_fd, *datasocket);
-		if (verbose) {
-			syslog(LOG_DEBUG, "<%s>", buf);
-		}
+					"got %d bytes from Printer at %d sending to socket %d",
+					l, *print_fd, *datasocket);
+        if ( (verbose & 64) ) {
+            int i;
+            fprintf(stderr,"+---++++\n");
+            for (i=0; i< l; i++ ) {
+                fprintf(stderr, "%02X %c ", (unsigned short int)buf[i], (unsigned char) (buf[i] & 0xff) );
+            }
+            fprintf(stderr,"\n++++----\n");
+            fflush(stderr);
+        }
+
 		write(*datasocket, buf, l);
 	}
 	if (*print_fd == 0)

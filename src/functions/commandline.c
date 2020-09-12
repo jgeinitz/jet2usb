@@ -26,13 +26,13 @@ int parsearguments(int ac, char **av,
                 "\t--cmdport port\t-c port  \tspecial command interface\n"
                 "\t--verbose     \t-v       \tbe verbose\n"
         		"\t--Debug level \t-D level \tset debug level\n"
-                "\t--testmode    \t-T       \tinternal test mode\n",
+                "\t--testmode    \t-T       \tinternal test mode\n"
+        		"\nDebug:\n 64 (0x40) dump data transfer to stdout\n",
                 name
                 );
     }
     
     while (1) {
-        //int this_option_optind = optind ? optind : 1;
         int option_index = 0;
         int c;
         

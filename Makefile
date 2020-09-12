@@ -5,7 +5,7 @@
 
 all: build
 
-build:
+build: src/jet2usb.c
 	$(MAKE) -C src
 
 clean:
