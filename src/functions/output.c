@@ -6,6 +6,7 @@
  */
 #include <stdio.h>
 #include <syslog.h>
+#include <unistd.h>
 
 FILE *pfd = NULL;
 
@@ -24,4 +25,32 @@ int testprinter(char *p, int tst) {
     return 0;
 }
 
+#define BUFSIZE 16384
+int copyfrom(int *print_fd, int *datasocket, int verbose) {
+	char buf[BUFSIZE];
+	int l;
 
+	if ((l = read(*print_fd, buf, BUFSIZE - 1)) < 0) {
+		syslog(LOG_ERR, "printer sent data and disappeared");
+		close(*print_fd);
+		*print_fd = 0;
+	}
+	if (l == 0) {
+		if (verbose) {
+			syslog(LOG_INFO, "received 0 bytes from printer");
+		}
+	} else {
+		buf[l + 1] = '\0';
+		if (verbose)
+			syslog(LOG_INFO,
+					"got %d bytes from Printer at %d sending to socket %d", l,
+					*print_fd, *datasocket);
+		if (verbose) {
+			syslog(LOG_DEBUG, "<%s>", buf);
+		}
+		write(*datasocket, buf, l);
+	}
+	if (*print_fd == 0)
+		return 1;
+	return 0;
+}

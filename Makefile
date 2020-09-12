@@ -1,7 +1,8 @@
 #
 # 
 #
-CFLAGS=-g
+.EXPORT_ALL_VARIABLES:
+
 all: build jet2usb
 
 build:

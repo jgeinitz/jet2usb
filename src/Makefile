@@ -1,15 +1,14 @@
 
-# all
-CFLAGS=-g
-LDFLAGS=-g
+#
+.EXPORT_ALL_VARIABLES:
 
-all: clean jet2usb
+all: jet2usb
 
-jet2usb: jet2usb.o tool.a
-	gcc -o $@ jet2usb.o tool.a
+jet2usb: tool.a jet2usb.o
+	$(CC) $(LDFLAGS) -o $@ jet2usb.o tool.a
 
 jet2usb.o: jet2usb.c version.h
-	gcc -c jet2usb.c
+	$(CC) -c $(CFLAGS) jet2usb.c
 
 version.h:
 	sh buildversion.sh version.h
