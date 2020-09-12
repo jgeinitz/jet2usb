@@ -5,10 +5,12 @@
  *      Author: gei
  */
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <syslog.h>
 #include <unistd.h>
-
-static FILE *pfd = NULL;
+#include <string.h>
 
 static char pname[256];
 
@@ -19,11 +21,10 @@ int testprinter(char *p, int *printerfd, int tst) {
         return 0;
     }
     strncpy(pname, p, 256);
-    if ( (pfd=fopen(p,"r+")) == NULL ) {
+    if ( (*printerfd=open(p,O_RDWR )) == -1 ) {
     	syslog(LOG_ERR,"cannot open %s \"%m\"", p);
         return 1;
     }
-    *printerfd = fileno(pfd);
     return 0;
 }
 
@@ -41,14 +42,10 @@ int copyfrom(int *print_fd, int *datasocket, int verbose) {
 		if (verbose) {
 			syslog(LOG_INFO, "received 0 bytes from printer");
 		}
-		fclose(pfd);
 		close(*print_fd);
-		if ( (pfd=fopen(pname,"a+")) != NULL ) {
-			*print_fd = fileno(pfd);
-		} else {
+		if ( (*print_fd=open(pname,O_RDWR)) == -1 ) {
 			*print_fd = 0;
 		}
-
 	} else {
 		buf[l + 1] = '\0';
 		if (verbose)
