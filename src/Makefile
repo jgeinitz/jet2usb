@@ -7,11 +7,11 @@ all: jet2usb
 jet2usb: tool.a jet2usb.o
 	$(CC) $(LDFLAGS) -o $@ jet2usb.o tool.a
 
-jet2usb.o: jet2usb.c version.h
+jet2usb.o: version.h jet2usb.c
 	$(CC) -c $(CFLAGS) jet2usb.c
 
 version.h:
-	sh buildversion.sh version.h
+	sh tools/buildversion.sh version.h
 
 tool.a:
 	$(MAKE) -C functions
