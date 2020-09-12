@@ -2,8 +2,13 @@
 #
 OBJS=commandline.o output.o commands.o datasocket.o
 
-tool.a: $(OBJS)
-	@ar -r tool.a $(OBJS)
+all: ../tool.a
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+../tool.a: $(OBJS)
+	ar -r $@ $(OBJS)
 	
 clean:
-	-/bin/rm -f *.o
+	-/bin/rm -f *.o ../tool.a

@@ -67,8 +67,7 @@ int main(int ac, char** av) {
             printer, P_MAX_LEN)) {
 
         fprintf(stderr, "%s: terminating on argument errors.\n", me);
-        syslog(LOG_ERR, "terminating on argument errors.");
-        fatalexit();
+        exit(1);;
     }
 
     messagesetup(verbose);

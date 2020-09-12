@@ -20,7 +20,7 @@ int parsearguments(int ac, char **av,
     ) {
     
     void usage(char *name) {
-        fprintf(stderr,"usage: %s [-j port] [-c port] [-p device] [-v] [-T]\n"
+        fprintf(stderr,"usage: %s\n"
                 "\t--jetport port\t-j port  \tlisten port for data\n"
                 "\t--printer name\t-p device\tsend data to this device\n"
                 "\t--cmdport port\t-c port  \tspecial command interface\n"
