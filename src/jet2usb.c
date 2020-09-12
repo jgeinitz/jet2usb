@@ -118,7 +118,7 @@ int main(int ac, char** av) {
         max_sd = cmd_master_fd;
         FD_SET(data_master_fd, &readfds);
         if (data_master_fd > max_sd) max_sd = data_master_fd;
-        if (print_fd != 0) {
+        if (print_fd >= 0) {
             FD_SET(print_fd, &readfds);
             if (print_fd > max_sd) max_sd = print_fd;
         }
@@ -152,6 +152,12 @@ int main(int ac, char** av) {
         if (FD_ISSET(data_master_fd, &readfds)) {
         	int rc = new_data_socket(verbose, data_master_fd, &client_socket );
         	if ( rc ) return rc;
+        	if ( print_fd < 0 ) {
+        		if ( printeropen(&print_fd) ) {
+        			syslog(LOG_ERR,"printer reopen error");
+        			terminating = 1;
+        		}
+        	}
         }
         /**********************************************
          * new command channel - open */
@@ -162,7 +168,7 @@ int main(int ac, char** av) {
         /**********************************************
          * copy data from data socket to printer*/
         if (FD_ISSET(client_socket, &readfds)) {
-        	int rc = copyTo(&client_socket, print_fd, verbose, TestMode);
+        	int rc = copyTo(&client_socket, &print_fd, verbose, TestMode);
         	if ( verbose && (rc != 0 ) ) syslog(LOG_DEBUG,"data channel returned %d", rc);
         }
         /**********************************************

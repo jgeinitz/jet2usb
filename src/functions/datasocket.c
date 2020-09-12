@@ -66,7 +66,7 @@ int new_data_socket(int verb, int master_fd, int *socket )
 
 
 #define RBUFS 2049
-int copyTo(int *from, int to, int verbose, int testmode) {
+int copyTo(int *from, int *to, int verbose, int testmode) {
     int bytes;
     char buffer[RBUFS];
     if ( (bytes=read(*from,buffer,RBUFS-1)) < 0 ) {
@@ -80,7 +80,7 @@ int copyTo(int *from, int to, int verbose, int testmode) {
     if ( bytes > 0 ) {
         if ( verbose ) {
             syslog(LOG_INFO,"rcv'd %d bytes from socket %d will send to %d",
-                    bytes, *from, to);
+                    bytes, *from, *to);
         }
         //guessJob(buffer,255);
         if ( testmode || (verbose & 64) ) {
@@ -93,9 +93,11 @@ int copyTo(int *from, int to, int verbose, int testmode) {
             fflush(stderr);
         }
         if ( ! testmode ) {
-            if ( write(to,buffer,bytes) < 0 ) {
+            if ( write(*to,buffer,bytes) < 0 ) {
                 syslog(LOG_ERR,"write error to printer %m");
-                if ( *from )close(*from);
+                close(*to);
+                *to=-1;
+                if ( *from ) close(*from);
                 *from=0;
                 return 1;
             }
